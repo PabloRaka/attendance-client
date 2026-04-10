@@ -6,7 +6,6 @@ A professional Face Recognition based attendance management system built with Re
 
 - **🔐 Secure Authentication**: Role-based access control for Users and Administrators.
 - **📸 Face Recognition**: Advanced attendance logging using facial feature mapping.
-- **📲 QR Code Attendance**: Fast and secure attendance via dynamic QR code generation and scanning.
 - **📊 Admin Dashboard**: Comprehensive management of user attendance, data filtering, and server-side pagination.
 - **📥 Excel Export**: Generate attendance reports with a single click, synchronized with active filters.
 - **⏱️ Real-time Tracking**: Accurate lateness calculation and attendance status monitoring.
