@@ -1,0 +1,72 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+apiClient.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.hash = '#/login';
+    }
+
+    let errorMessage = 'Request failed';
+    const detail = error.response?.data?.detail;
+
+    if (typeof detail === 'string') {
+      errorMessage = detail;
+    } else if (Array.isArray(detail) && detail.length > 0) {
+      // FastAPI Validation Error (Array of errors)
+      errorMessage = detail[0].msg || 'Validation error';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    return Promise.reject(errorMessage);
+  }
+);
+
+export const api = {
+  auth: {
+    login: (formData: FormData) => apiClient.post('/auth/login', formData),
+    register: (formData: FormData) => apiClient.post('/auth/register', formData),
+  },
+  user: {
+    getProfile: () => apiClient.get('/user/profile'),
+    getHistory: () => apiClient.get('/user/history'),
+    changePassword: (formData: FormData) => apiClient.post('/user/change-password', formData),
+    uploadFace: (formData: FormData) => apiClient.post('/user/upload-face', formData),
+    getFacePhoto: () => apiClient.get('/user/face-photo', { responseType: 'blob' }),
+    getFacePhotoUrl: () => `${API_BASE_URL}/user/face-photo`,
+  },
+  attendance: {
+    scanFace: (formData: FormData) => apiClient.post('/attendance/face', formData),
+  },
+  admin: {
+    getUsers: () => apiClient.get('/admin/users'),
+    getLogs: (start?: string, end?: string) => apiClient.get('/admin/logs', { params: { start_date: start, end_date: end } }),
+    updateUser: (userId: number, data: any) => apiClient.put(`/admin/user/${userId}`, data),
+    deleteUser: (userId: number) => apiClient.delete(`/admin/user/${userId}`),
+    updateUserFace: (userId: number, formData: FormData) => apiClient.post(`/admin/user/${userId}/face`, formData),
+    deleteUserFace: (userId: number) => apiClient.delete(`/admin/user/${userId}/face`),
+    getUserFace: (userId: number) => apiClient.get(`/admin/user/${userId}/face`, { responseType: 'blob' }),
+    getFacePhotoUrl: (userId: number) => `${API_BASE_URL}/admin/user/${userId}/face`,
+    forceAttendance: (userId: number, type: 'in' | 'out') => apiClient.post(`/admin/user/${userId}/force-attendance?attendance_type=${type}`),
+  },
+};
+
