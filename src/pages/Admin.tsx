@@ -350,7 +350,7 @@ const Admin = () => {
         <div className="flex items-center gap-4 px-4 bg-slate-50 rounded-[22px] border border-slate-100">
            <span className="text-[10px] font-black uppercase text-slate-400">Total: {totalItems} Users</span>
         </div>
-        <div className="flex items-center px-4 bg-white rounded-[22px] border border-slate-100 shadow-sm">
+          <div className="flex items-center px-0 md:px-4 bg-transparent md:bg-white rounded-[22px] border-0 md:border md:border-slate-100 shadow-none md:shadow-sm">
            <PageSizeSelector pageSize={pageSize} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
         </div>
       </div>

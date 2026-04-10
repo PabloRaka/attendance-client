@@ -31,7 +31,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.Re
 };
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(() => window.innerWidth >= 1024);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex overflow-x-hidden">
@@ -40,7 +40,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
       
       {/* Floating Toggle Button (Visible when sidebar is hidden) */}
       {!isSidebarOpen && (
-        <div className="fixed top-6 left-6 z-[160] animate-in fade-in slide-in-from-left-4 duration-500">
+        <div className="hidden lg:block fixed top-6 left-6 z-[160] animate-in fade-in slide-in-from-left-4 duration-500">
            <button 
              onClick={() => setIsSidebarOpen(true)}
              className="p-4 bg-white rounded-[20px] shadow-xl shadow-slate-200 border border-slate-100 text-[#817BB9] hover:scale-110 transition-transform"

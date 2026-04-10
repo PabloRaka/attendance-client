@@ -146,7 +146,7 @@ const History = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mb-10">
+      <div className="flex items-center gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-[#817BB9]/10 rounded-[22px] flex items-center justify-center">
             <HistoryIcon className="w-7 h-7 text-[#817BB9]" />
@@ -160,82 +160,101 @@ const History = () => {
             </p>
           </div>
         </div>
-
-        {isAdmin && (
-          <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-[28px] border border-slate-100 shadow-xl shadow-slate-200/20">
-            {/* Search Input */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-transparent focus-within:border-[#817BB9]/20 focus-within:bg-white transition-all">
-              <Search className="w-4 h-4 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Cari user..."
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="bg-transparent text-[11px] font-bold focus:outline-none text-slate-700 w-32 md:w-48"
-              />
-            </div>
-
-            <div className="w-px h-6 bg-slate-100 hidden sm:block" />
-
-            {/* Date Filters */}
-            <div 
-              onClick={() => startDateRef.current?.showPicker()}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors"
-            >
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <input 
-                ref={startDateRef}
-                type="date" 
-                value={startDate} 
-                max={endDate || undefined}
-                onChange={(e) => handleDateChange('start', e.target.value)}
-                className="bg-transparent text-[10px] font-black uppercase tracking-widest focus:outline-none text-slate-600 cursor-pointer"
-              />
-            </div>
-            <ArrowRight className="w-3 h-3 text-slate-300" />
-            <div 
-              onClick={() => endDateRef.current?.showPicker()}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors"
-            >
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <input 
-                ref={endDateRef}
-                type="date" 
-                value={endDate} 
-                min={startDate || undefined}
-                onChange={(e) => handleDateChange('end', e.target.value)}
-                className="bg-transparent text-[10px] font-black uppercase tracking-widest focus:outline-none text-slate-600 cursor-pointer"
-              />
-            </div>
-            {(startDate || endDate || search) && (
-              <button 
-                onClick={clearFilters}
-                className="p-2 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-lg transition-colors"
-                title="Hapus Filter"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-
-            <div className="w-px h-6 bg-slate-100 hidden sm:block" />
-            
-            <div className="flex items-center">
-              <PageSizeSelector pageSize={pageSize} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
-            </div>
-
-            <div className="w-px h-6 bg-slate-100 hidden sm:block" />
-
-            {/* Export Button */}
-            <button 
-              onClick={handleExportExcel}
-              className="flex items-center gap-2 px-6 py-2 bg-[#817BB9] hover:bg-[#6e68a3] text-white rounded-xl transition-all shadow-lg shadow-[#817BB9]/20 text-[10px] font-black uppercase tracking-widest"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              Export Excel
-            </button>
-          </div>
-        )}
       </div>
+
+      {isAdmin && (
+        <div className="mb-10 bg-white rounded-[32px] border border-slate-100 shadow-2xl shadow-slate-200/30 overflow-hidden">
+          <div className="px-5 md:px-7 py-5 md:py-6 bg-gradient-to-r from-[#817BB9] via-[#7770af] to-[#6e68a3] border-b border-[#6e68a3]/50">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">Kontrol Data</p>
+            <h2 className="text-lg md:text-xl font-black text-white mt-1">Filter & Aksi Cepat Presensi</h2>
+          </div>
+
+          <div className="p-5 md:p-7 space-y-5">
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_auto] gap-4">
+              <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-2xl border border-transparent focus-within:border-[#817BB9]/30 focus-within:bg-white transition-all">
+                <Search className="w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari nama atau username user..."
+                  value={search}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="w-full bg-transparent text-sm font-semibold focus:outline-none text-slate-700 placeholder:text-slate-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => startDateRef.current?.showPicker()}
+                  className="flex items-center justify-between gap-3 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Mulai</span>
+                  </div>
+                  <input
+                    ref={startDateRef}
+                    type="date"
+                    value={startDate}
+                    max={endDate || undefined}
+                    onChange={(e) => handleDateChange('start', e.target.value)}
+                    className="bg-transparent text-[11px] font-black uppercase tracking-widest focus:outline-none text-slate-700 cursor-pointer"
+                  />
+                </button>
+
+                <ArrowRight className="hidden sm:block w-4 h-4 text-slate-300 justify-self-center" />
+
+                <button
+                  type="button"
+                  onClick={() => endDateRef.current?.showPicker()}
+                  className="flex items-center justify-between gap-3 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Sampai</span>
+                  </div>
+                  <input
+                    ref={endDateRef}
+                    type="date"
+                    value={endDate}
+                    min={startDate || undefined}
+                    onChange={(e) => handleDateChange('end', e.target.value)}
+                    className="bg-transparent text-[11px] font-black uppercase tracking-widest focus:outline-none text-slate-700 cursor-pointer"
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Baris per halaman:</span>
+                <PageSizeSelector pageSize={pageSize} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                {(startDate || endDate || search) && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-colors text-[10px] font-black uppercase tracking-widest"
+                    title="Hapus Filter"
+                  >
+                    <X className="w-4 h-4" />
+                    Reset
+                  </button>
+                )}
+
+                <button
+                  onClick={handleExportExcel}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-[#817BB9] hover:bg-[#6e68a3] text-white rounded-xl transition-all shadow-lg shadow-[#817BB9]/20 text-[10px] font-black uppercase tracking-widest"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Export Excel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden mb-8">
         {/* Desktop View Table */}

@@ -62,14 +62,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   return (
     <>
       {/* Mobile Toggle */}
-      <div className="lg:hidden fixed top-6 left-6 z-[150]">
-        <button 
-          onClick={() => onToggle(!isOpen)}
-          className="p-4 bg-white rounded-[20px] shadow-xl shadow-slate-200 border border-slate-100 text-[#817BB9]"
-        >
-          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
+      {!isOpen && (
+        <div className="lg:hidden fixed bottom-5 left-5 z-[150]">
+          <button
+            onClick={() => onToggle(true)}
+            className="p-4 bg-[#817BB9] rounded-2xl shadow-xl shadow-[#817BB9]/30 border border-white/40 text-white"
+            aria-label="Buka menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
       {/* Backdrop for mobile */}
       {isOpen && (
@@ -97,12 +100,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
             </div>
           </Link>
           
-          <button 
+          <button
             onClick={() => onToggle(false)}
-            className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors hidden lg:block"
+            className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"
             title="Hide Sidebar"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <span className="hidden lg:block">
+              <ChevronLeft className="w-5 h-5" />
+            </span>
+            <span className="lg:hidden">
+              <X className="w-5 h-5" />
+            </span>
           </button>
         </div>
 
