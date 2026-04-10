@@ -52,7 +52,10 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col transition-all duration-500 ${isSidebarOpen ? 'lg:pl-[280px]' : 'lg:pl-0'}`}>
+      <div 
+        className={`flex-1 flex flex-col transition-[padding] duration-500 will-change-[padding-left] ${isSidebarOpen ? 'lg:pl-[280px]' : 'lg:pl-0'}`}
+        style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+      >
         <main className="flex-grow container mx-auto px-4 md:px-8 py-10 max-w-7xl">
           {children}
         </main>

@@ -3,6 +3,23 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { Camera, Upload, CheckCircle, AlertCircle, User, ImageIcon, X, RefreshCw, Key, Shield } from 'lucide-react';
 
+// Compress image to max 640px, quality 80% to reduce upload size over slow connections
+const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =>
+  new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((b) => resolve(b ?? blob), 'image/jpeg', quality);
+    };
+    img.src = url;
+  });
+
 // ─── Camera Capture Modal ─────────────────────────────────────────────────────
 
 interface CameraModalProps {
@@ -118,6 +135,7 @@ const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
             )}
           </div>
         </div>
+        <canvas ref={canvasRef} className="hidden" />
       </div>
     </div>
   );
@@ -206,8 +224,9 @@ const Profile = () => {
     if (!faceFile) return;
     setIsUploadingFace(true);
     setFaceMessage('');
+    const compressed = await compressImage(faceFile);
     const formData = new FormData();
-    formData.append('file', faceFile, 'face.jpg');
+    formData.append('file', compressed, 'face.jpg');
     try {
       const updatedUser: any = await api.user.uploadFace(formData);
       setFaceMessage('Foto wajah berhasil disimpan!');

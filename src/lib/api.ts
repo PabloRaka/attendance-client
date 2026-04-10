@@ -4,6 +4,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 });
 
 apiClient.interceptors.request.use(
@@ -48,7 +51,8 @@ export const api = {
   },
   user: {
     getProfile: () => apiClient.get('/user/profile'),
-    getHistory: () => apiClient.get('/user/history'),
+    getHistory: (page: number = 1, size: number = 15) => 
+      apiClient.get('/user/history', { params: { page, size } }),
     changePassword: (formData: FormData) => apiClient.post('/user/change-password', formData),
     uploadFace: (formData: FormData) => apiClient.post('/user/upload-face', formData),
     getFacePhoto: () => apiClient.get('/user/face-photo', { responseType: 'blob' }),
@@ -58,15 +62,21 @@ export const api = {
     scanFace: (formData: FormData) => apiClient.post('/attendance/face', formData),
   },
   admin: {
-    getUsers: () => apiClient.get('/admin/users'),
-    getLogs: (start?: string, end?: string) => apiClient.get('/admin/logs', { params: { start_date: start, end_date: end } }),
-    updateUser: (userId: number, data: any) => apiClient.put(`/admin/user/${userId}`, data),
+    getUsers: (page: number = 1, size: number = 15, search?: string) => 
+      apiClient.get('/admin/users', { params: { page, size, search } }),
+    getLogs: (page: number = 1, size: number = 15, start?: string, end?: string, search?: string) => 
+      apiClient.get('/admin/logs', { params: { page, size, start_date: start, end_date: end, search } }),
+    updateUser: (userId: number, data: Record<string, unknown>) => apiClient.put(`/admin/user/${userId}`, data),
     deleteUser: (userId: number) => apiClient.delete(`/admin/user/${userId}`),
     updateUserFace: (userId: number, formData: FormData) => apiClient.post(`/admin/user/${userId}/face`, formData),
     deleteUserFace: (userId: number) => apiClient.delete(`/admin/user/${userId}/face`),
     getUserFace: (userId: number) => apiClient.get(`/admin/user/${userId}/face`, { responseType: 'blob' }),
     getFacePhotoUrl: (userId: number) => `${API_BASE_URL}/admin/user/${userId}/face`,
     forceAttendance: (userId: number, type: 'in' | 'out') => apiClient.post(`/admin/user/${userId}/force-attendance?attendance_type=${type}`),
+    exportExcel: (start?: string, end?: string, search?: string) => apiClient.get('/admin/export-excel', { 
+      params: { start_date: start, end_date: end, search: search },
+      responseType: 'blob'
+    }),
   },
 };
 

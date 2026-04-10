@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -6,6 +6,12 @@ import {
   History as HistoryAction, ShieldCheck, UserCircle, 
   Menu, X, ChevronRight, Bell, Settings, ChevronLeft
 } from 'lucide-react';
+
+interface MenuItem {
+  name: string;
+  path: string;
+  icon: React.ElementType;
+}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     navigate('/login');
   };
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'History', path: '/history', icon: HistoryAction },
     { name: 'Profile', path: '/profile', icon: UserCircle },
@@ -32,13 +38,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
     menuItems.push({ name: 'Admin Panel', path: '/admin', icon: ShieldCheck });
   }
 
-  const NavLink = ({ item }: { item: any }) => {
+  const NavLink = ({ item }: { item: MenuItem }) => {
     const isActive = location.pathname === item.path;
     return (
       <Link 
         to={item.path}
         onClick={() => { if (window.innerWidth < 1024) onToggle(false); }}
-        className={`flex items-center justify-between px-6 py-4 rounded-[22px] transition-all duration-300 group ${
+        className={`flex items-center justify-between px-6 py-4 rounded-[22px] transition-colors duration-300 group ${
           isActive 
             ? 'bg-[#817BB9] text-white shadow-lg shadow-[#817BB9]/30' 
             : 'text-slate-500 hover:bg-[#817BB9]/5 hover:text-[#817BB9]'
@@ -74,9 +80,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       )}
 
       {/* Sidebar Container */}
-      <aside className={`fixed top-0 left-0 h-screen z-[145] transition-all duration-500 ease-out transform
+      <aside className={`fixed top-0 left-0 h-screen z-[145] transition-transform duration-500 will-change-transform cubic-bezier-in-out transform
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         w-[280px] bg-white border-r border-slate-100 shadow-2xl shadow-slate-200/40 flex flex-col`}
+        style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
         {/* Logo Section */}
         <div className="p-10 flex items-center justify-between">
@@ -150,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
         {/* Footer info */}
         <div className="p-10 pt-0">
-            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.1em]">© 2026 AuraAttendance</p>
+            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.1em]">© 2026 Attendance IBIK</p>
         </div>
       </aside>
     </>

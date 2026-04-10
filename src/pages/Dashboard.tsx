@@ -3,6 +3,23 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { Scan, CheckCircle, AlertCircle, Camera, ImageIcon, X, ArrowRight, UserCheck } from 'lucide-react';
 
+// Compress image to max 640px, quality 80% to reduce upload size over slow connections
+const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =>
+  new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((b) => resolve(b ?? blob), 'image/jpeg', quality);
+    };
+    img.src = url;
+  });
+
 // ─── Face Recognition Modal ──────────────────────────────────────────────────
 
 type FacePhase = 'choose' | 'camera' | 'preview' | 'processing' | 'result';
@@ -14,10 +31,9 @@ interface FaceModalProps {
 const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const [phase, setPhase] = useState<FacePhase>('choose');
+  const [phase, setPhase] = useState<FacePhase>('camera');
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<{ success: boolean; message: string; detail?: string } | null>(null);
@@ -25,6 +41,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
+    handleSelectCamera();
     return () => stopCamera();
   }, []);
 
@@ -50,16 +67,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     }
   };
 
-  const handleSelectGallery = () => fileInputRef.current?.click();
-
-  const handleGalleryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPreviewUrl(URL.createObjectURL(file));
-    setCapturedBlob(file);
-    setPhase('preview');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
   const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -94,27 +101,31 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     setResult(null);
     setCountdown(null);
     setCameraError('');
-    setPhase('choose');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setPhase('camera');
+    handleSelectCamera();
   };
 
   const handleSubmit = async () => {
     if (!capturedBlob) return;
     setPhase('processing');
+    const compressed = await compressImage(capturedBlob);
     const formData = new FormData();
-    formData.append('file', capturedBlob, 'face.jpg');
+    formData.append('file', compressed, 'face.jpg');
     try {
       const res: any = await api.attendance.scanFace(formData);
       setResult({
         success: true,
-        message: `${res.user} berhasil absen ${res.type === 'in' ? 'masuk 🟢' : 'keluar 🔴'}`,
+        message: `${res.user} berhasil absen ${res.type === 'in' ? 'masuk 🟢' : 'keluar 🔴'}${res.attendance_status ? ` (${res.attendance_status})` : ''}`,
         detail: `Pukul ${new Date(res.time).toLocaleTimeString('id-ID')} · Kemiripan wajah: ${Math.round((res.similarity || 0) * 100)}%`,
       });
     } catch (err: any) {
+      const isAntiSpoof = typeof err === 'string' && (err.includes('Anti-Spoofing') || err.includes('Liveness') || err.includes('layar'));
       setResult({
         success: false,
-        message: err || 'Verifikasi Gagal',
-        detail: 'Coba pastikan wajah Anda terlihat sepenuhnya di dalam bingkai dengan pencahayaan yang cukup.',
+        message: isAntiSpoof ? 'Kecurangan Terdeteksi' : (err || 'Verifikasi Gagal'),
+        detail: isAntiSpoof 
+          ? 'Sistem mendeteksi bahwa Anda menggunakan foto atau layar hp. Silakan gunakan wajah asli Anda.'
+          : 'Coba pastikan wajah Anda terlihat sepenuhnya di dalam bingkai dengan pencahayaan yang cukup.',
       });
     } finally {
       setPhase('result');
@@ -140,7 +151,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
             <div>
               <h2 className="text-xl font-black text-slate-900">Scan Wajah</h2>
               <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
-                {phase === 'choose' && 'Pilih Sumber Foto'}
                 {phase === 'camera' && 'Ambil Foto Langsung'}
                 {phase === 'preview' && 'Review Hasil Foto'}
                 {(phase === 'processing' || phase === 'result') && 'Verifikasi Wajah...'}
@@ -149,31 +159,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
           </div>
 
           {/* ── CHOOSE SOURCE ── */}
-          {phase === 'choose' && (
-            <div className="grid grid-cols-2 gap-4 mb-2">
-              <button onClick={handleSelectCamera}
-                className="group flex flex-col items-center gap-4 p-8 rounded-3xl bg-slate-50 border-2 border-transparent hover:border-[#817BB9]/20 hover:bg-[#817BB9]/5 transition-all">
-                <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Camera className="w-8 h-8 text-[#817BB9]" />
-                </div>
-                <div className="text-center">
-                  <p className="font-black text-slate-900 text-sm">Ambil Foto</p>
-                  <p className="text-slate-400 text-[10px] mt-1 uppercase font-bold">Kamera</p>
-                </div>
-              </button>
-
-              <button onClick={handleSelectGallery}
-                className="group flex flex-col items-center gap-4 p-8 rounded-3xl bg-slate-50 border-2 border-transparent hover:border-[#817BB9]/20 hover:bg-[#817BB9]/5 transition-all">
-                <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ImageIcon className="w-8 h-8 text-[#817BB9]" />
-                </div>
-                <div className="text-center">
-                  <p className="font-black text-slate-900 text-sm">Dari Galeri</p>
-                  <p className="text-slate-400 text-[10px] mt-1 uppercase font-bold">Perangkat</p>
-                </div>
-              </button>
-            </div>
-          )}
 
           {/* ── CAMERA / PREVIEW / PROCESSING / RESULT ── */}
           {phase !== 'choose' && (
@@ -258,7 +243,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
           )}
         </div>
       </div>
-      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleGalleryFileChange} />
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 };
@@ -347,7 +332,7 @@ const Dashboard = () => {
                 </li>
                 <li className="flex gap-4">
                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-slate-600">2</div>
-                   <p className="text-xs font-bold text-slate-500 leading-relaxed">Hadapkan wajah ke kamera atau ambil dari galeri.</p>
+                   <p className="text-xs font-bold text-slate-500 leading-relaxed">Hadapkan wajah ke kamera depan untuk verifikasi.</p>
                 </li>
                 <li className="flex gap-4">
                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-slate-600">3</div>

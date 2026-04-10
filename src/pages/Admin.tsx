@@ -6,6 +6,7 @@ import {
   Scan, X, CheckCircle, AlertCircle, ImageIcon, ArrowRight,
   Shield, MapPin, Mail, Key, MoreVertical, LogIn, LogOut
 } from 'lucide-react';
+import Pagination, { PageSizeSelector } from '../components/Pagination';
 
 // ─── Face Manager Modal ───────────────────────────────────────────────────────
 
@@ -231,17 +232,38 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [msg, setMsg] = useState('');
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Modals state
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [faceUser, setFaceUser] = useState<any | null>(null);
   const [isNewUserOpen, setIsNewUserOpen] = useState(false);
   const [newUser, setNewUser] = useState({ fullname: '', username: '', password: '', role: 'user' });
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { 
+    const timer = setTimeout(() => {
+      loadUsers(1); 
+    }, 500); // Debounce search
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const loadUsers = async () => {
+  useEffect(() => {
+    loadUsers(currentPage);
+  }, [currentPage, pageSize]);
+
+  const loadUsers = async (page: number) => {
     setIsLoading(true);
-    try { const data: any = await api.admin.getUsers(); setUsers(data); }
+    try { 
+      const res: any = await api.admin.getUsers(page, pageSize, search); 
+      setUsers(res.items);
+      setTotalPages(res.pages);
+      setTotalItems(res.total);
+      setCurrentPage(res.page);
+    }
     catch { setMsg('❌ Gagal memuat daftar user.'); }
     finally { setIsLoading(false); }
   };
@@ -279,10 +301,10 @@ const Admin = () => {
     } catch (e: any) { setMsg(`❌ Gagal: ${e}`); }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.username.toLowerCase().includes(search.toLowerCase()) || 
-    u.fullname.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setCurrentPage(1); // Reset to first page on search
+  };
 
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -321,18 +343,22 @@ const Admin = () => {
             type="text" 
             placeholder="Cari nama atau username..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full h-14 pl-14 pr-6 bg-slate-50 border-2 border-transparent rounded-[22px] text-sm font-bold placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-[#817BB9]/20 transition-all"
           />
         </div>
         <div className="flex items-center gap-4 px-4 bg-slate-50 rounded-[22px] border border-slate-100">
-           <span className="text-[10px] font-black uppercase text-slate-400">Total: {filteredUsers.length} Users</span>
+           <span className="text-[10px] font-black uppercase text-slate-400">Total: {totalItems} Users</span>
+        </div>
+        <div className="flex items-center px-4 bg-white rounded-[22px] border border-slate-100 shadow-sm">
+           <PageSizeSelector pageSize={pageSize} onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }} />
         </div>
       </div>
 
       {/* User Table */}
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop View Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-slate-50/50">
@@ -352,7 +378,7 @@ const Admin = () => {
                     </div>
                   </td>
                 </tr>
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-4 text-slate-300">
@@ -362,7 +388,7 @@ const Admin = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => (
+                users.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50/30 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex flex-col">
@@ -401,6 +427,72 @@ const Admin = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile View Cards */}
+        <div className="md:hidden divide-y divide-slate-100">
+           {isLoading ? (
+             <div className="py-20 text-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-10 h-10 border-4 border-[#817BB9]/10 border-t-[#817BB9] rounded-full animate-spin" />
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Memuat...</p>
+                </div>
+             </div>
+           ) : users.length === 0 ? (
+             <div className="py-20 text-center">
+                <div className="flex flex-col items-center gap-4 text-slate-300">
+                  <Users className="w-16 h-16 opacity-20" />
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Tidak ada user ditemukan.</p>
+                </div>
+             </div>
+           ) : (
+             users.map((u) => (
+               <div key={u.id} className="p-6 bg-white space-y-4">
+                 <div className="flex items-center justify-between">
+                   <div className="flex flex-col">
+                     <span className="text-sm font-black text-slate-900 leading-tight">{u.fullname}</span>
+                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">@{u.username}</span>
+                   </div>
+                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${u.role === 'admin' ? 'bg-[#817BB9]/10 text-[#817BB9]' : 'bg-slate-100 text-slate-500'}`}>
+                      {u.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <Users className="w-2.5 h-2.5" />}
+                      {u.role}
+                   </span>
+                 </div>
+
+                 <div className="flex items-center justify-between pt-2">
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${u.has_face ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>
+                       {u.has_face ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                       {u.has_face ? 'Ready' : 'Missing'}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setEditingUser(u)} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl" title="Edit">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setFaceUser(u)} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl" title="Face">
+                          <Camera className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteUser(u)} className="p-2.5 bg-red-50 text-red-500 rounded-xl" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                 </div>
+               </div>
+             ))
+           )}
+        </div>
+      </div>
+
+      {/* Pagination component */}
+      <div className="mt-8 bg-white rounded-[32px] border border-slate-100 shadow-xl overflow-hidden">
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          totalItems={totalItems}
+          hidePageSize={true}
+        />
       </div>
 
       {/* NEW USER MODAL */}
