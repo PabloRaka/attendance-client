@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { User, Lock, ArrowRight } from 'lucide-react';
@@ -114,15 +114,15 @@ const Login = () => {
             </div>
           </form>
 
-          {/* Footer Section */}
-          <div className="mt-8 pt-6 border-t border-gray-50 text-center">
+          {/* Footer Section - Disabled as registration is external */}
+          {/* <div className="mt-8 pt-6 border-t border-gray-50 text-center">
             <p className="text-gray-400 text-xs font-medium">
               Belum punya akun? {' '}
               <Link to="/register" className="text-[#817BB9] hover:underline font-bold transition-colors">
                 Daftar
               </Link>
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

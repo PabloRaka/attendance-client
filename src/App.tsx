@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Profile from './pages/Profile';
@@ -73,7 +72,7 @@ const AppContent = () => {
     <Routes>
       {/* Auth Routes (Full-screen) */}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* <Route path="/register" element={<Register />} /> */}
       
       {/* App Routes (With Navbar and Container) */}
       <Route path="/" element={
