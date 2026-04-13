@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   History as HistoryIcon, ArrowUpRight, ArrowDownLeft, Clock, 
   Calendar, Search, X, ArrowRight, LogIn, LogOut,
-  CheckCircle, AlertCircle, FileSpreadsheet
+  CheckCircle, AlertCircle, FileSpreadsheet, MapPin
 } from 'lucide-react';
 import Pagination, { PageSizeSelector } from '../components/Pagination';
 
@@ -17,7 +17,81 @@ interface AttendanceLog {
   attendance_type: 'in' | 'out';
   status: string | null;
   method: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  location_name?: string | null;
 }
+
+const formatMethod = (method: string | null) => {
+  if (!method) return '-';
+  if (method === 'face_recognition') return 'Scan';
+  return method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+// ─── Map Modal Component ──────────────────────────────────────────────────────
+
+interface MapModalProps {
+  lat: string;
+  lon: string;
+  locationName?: string | null;
+  onClose: () => void;
+}
+
+const MapModal: React.FC<MapModalProps> = ({ lat, lon, locationName, onClose }) => {
+  // OSM Embed URL with marker
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lon)-0.005}%2C${parseFloat(lat)-0.005}%2C${parseFloat(lon)+0.005}%2C${parseFloat(lat)+0.005}&layer=mapnik&marker=${lat}%2C${lon}`;
+
+  return (
+    <div className="fixed inset-0 z-[300] bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-2xl rounded-[32px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300">
+        <button onClick={onClose}
+          className="absolute right-6 top-6 z-50 p-2 bg-white/80 backdrop-blur-md rounded-full text-slate-500 hover:bg-white shadow-lg transition-all">
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="p-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-blue-500" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 leading-tight">Lokasi Absensi</h2>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">
+                {locationName || `${lat}, ${lon}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-[24px] overflow-hidden border border-slate-100 shadow-inner bg-slate-50 relative aspect-video">
+            <iframe 
+              width="100%" 
+              height="100%" 
+              frameBorder="0" 
+              scrolling="no" 
+              marginHeight={0} 
+              marginWidth={0} 
+              src={mapUrl}
+            />
+          </div>
+          
+          <div className="mt-6 flex justify-between items-center">
+             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Presisi Koordinat: {lat}, {lon}
+             </div>
+             <a 
+              href={`https://www.google.com/maps?q=${lat},${lon}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-black uppercase text-blue-500 hover:underline"
+             >
+                Buka di Google Maps →
+             </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const History = () => {
   const { user } = useAuth();
@@ -33,6 +107,7 @@ const History = () => {
   const [pageSize, setPageSize] = useState(15);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [selectedLocation, setSelectedLocation] = useState<{lat: string, lon: string, name?: string | null} | null>(null);
 
   const startDateRef = useRef<HTMLInputElement>(null);
   const endDateRef = useRef<HTMLInputElement>(null);
@@ -267,6 +342,7 @@ const History = () => {
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tipe Absensi</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Metode</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Lokasi</th>
                 {isAdmin && <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Aksi Cepat</th>}
               </tr>
             </thead>
@@ -339,9 +415,24 @@ const History = () => {
                       )}
                     </td>
                     <td className="px-8 py-6 text-center">
-                      <span className="px-4 py-2 bg-slate-50 rounded-xl text-slate-500 text-[9px] font-black uppercase tracking-widest border border-slate-100">
-                        {h.method ? h.method.replace(/_/g, ' ') : '-'}
+                      <span className="px-4 py-2 bg-slate-50 rounded-xl text-slate-500 text-[9px] font-black uppercase tracking-widest border border-slate-100 whitespace-nowrap">
+                        {formatMethod(h.method)}
                       </span>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      {h.latitude && h.longitude ? (
+                        <button 
+                          onClick={() => setSelectedLocation({ lat: h.latitude!, lon: h.longitude!, name: h.location_name })}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all border border-slate-100 hover:border-blue-100 group/loc"
+                        >
+                          <MapPin className="w-3 h-3 text-slate-400 group-hover/loc:text-blue-500" />
+                          <span className="text-[10px] font-bold uppercase tracking-tight">
+                            {h.location_name || 'Lihat Peta'}
+                          </span>
+                        </button>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
                     </td>
                     {isAdmin && (
                       <td className="px-8 py-6">
@@ -431,9 +522,17 @@ const History = () => {
                          {h.status}
                       </div>
                     )}
-                    <span className="px-3 py-1 bg-slate-50 rounded-lg text-slate-400 text-[8px] font-black uppercase tracking-widest">
-                       {h.method?.replace(/_/g, ' ')}
+                    <span className="px-3 py-1 bg-slate-50 rounded-lg text-slate-400 text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
+                       {formatMethod(h.method)}
                     </span>
+                    {h.latitude && h.longitude && (
+                      <button 
+                        onClick={() => setSelectedLocation({ lat: h.latitude!, lon: h.longitude!, name: h.location_name })}
+                        className="px-3 py-1 bg-blue-50 text-blue-500 rounded-lg flex items-center gap-1 text-[8px] font-black uppercase"
+                      >
+                         <MapPin className="w-2.5 h-2.5" /> {h.location_name ? 'Lokasi' : 'Peta'}
+                      </button>
+                    )}
                   </div>
 
                   {isAdmin && (
@@ -465,6 +564,15 @@ const History = () => {
           hidePageSize={true}
         />
       </div>
+      {/* Map Modal */}
+      {selectedLocation && (
+        <MapModal 
+          lat={selectedLocation.lat}
+          lon={selectedLocation.lon}
+          locationName={selectedLocation.name}
+          onClose={() => setSelectedLocation(null)}
+        />
+      )}
     </div>
   );
 };

@@ -93,12 +93,32 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     handleSelectCamera();
   };
 
+  const getLocation = (): Promise<{ lat: number; lng: number } | null> =>
+    new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve(null),
+        { timeout: 10000 }
+      );
+    });
+
   const handleSubmit = async () => {
     if (!capturedBlob) return;
     setPhase('processing');
-    const compressed = await compressImage(capturedBlob);
+
+    const [compressed, location] = await Promise.all([
+      compressImage(capturedBlob),
+      getLocation()
+    ]);
+
     const formData = new FormData();
     formData.append('file', compressed, 'face.jpg');
+    if (location) {
+      formData.append('latitude', location.lat.toString());
+      formData.append('longitude', location.lng.toString());
+    }
+
     try {
       const res: any = await api.attendance.scanFace(formData);
       setResult({
