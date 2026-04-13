@@ -27,7 +27,7 @@ A professional Face Recognition based attendance management system built with Re
 
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-- Backend server running (FastAPI)
+- [Backend server](https://github.com/PabloRaka/attendance-server.git) running (FastAPI)
 
 ### Installation
 
