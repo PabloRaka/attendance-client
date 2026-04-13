@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
-import { useAuth } from '../context/AuthContext';
 import { 
-  Users, Search, Plus, Filter, Edit2, Trash2, Camera, 
-  Scan, X, CheckCircle, AlertCircle, ImageIcon, ArrowRight,
-  Shield, MapPin, Mail, Key, MoreVertical, LogIn, LogOut
+  Users, Search, Plus, Edit2, Trash2, Camera, 
+  X, CheckCircle, AlertCircle, ImageIcon,
+  Shield
 } from 'lucide-react';
 import Pagination, { PageSizeSelector } from '../components/Pagination';
 
@@ -21,8 +20,6 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
   const [faceBlob, setFaceBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
-  const [cameraError, setCameraError] = useState('');
-  const [countdown, setCountdown] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -31,13 +28,12 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
   const stopCamera = () => streamRef.current?.getTracks().forEach(t => t.stop());
 
   const openCamera = async () => {
-    setCameraError('');
     setPhase('camera');
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
       streamRef.current = s;
       if (videoRef.current) { videoRef.current.srcObject = s; videoRef.current.play(); }
-    } catch { setCameraError('Gagal akses kamera.'); }
+    } catch { setMsg('❌ Gagal akses kamera.'); }
   };
 
   const capture = () => {
@@ -283,22 +279,14 @@ const Admin = () => {
       setMsg('✅ User berhasil dibuat!');
       setIsNewUserOpen(false);
       setNewUser({ fullname: '', username: '', password: '', role: 'user' });
-      loadUsers();
+      loadUsers(1);
     } catch (e: any) { setMsg(`❌ Gagal: ${e}`); }
   };
 
   const handleDeleteUser = async (u: any) => {
     if (!confirm(`Hapus user @${u.username}?`)) return;
-    try { await api.admin.deleteUser(u.id); setMsg('✅ User dihapus.'); loadUsers(); }
+    try { await api.admin.deleteUser(u.id); setMsg('✅ User dihapus.'); loadUsers(currentPage); }
     catch (e: any) { setMsg(`❌ Gagal: ${e}`); }
-  };
-
-  const forceAttendance = async (userId: number, type: 'in' | 'out') => {
-    try {
-      await api.admin.forceAttendance(userId, type);
-      setMsg(`✅ Absen ${type} berhasil dipaksa.`);
-      loadUsers();
-    } catch (e: any) { setMsg(`❌ Gagal: ${e}`); }
   };
 
   const handleSearchChange = (val: string) => {
@@ -559,12 +547,12 @@ const Admin = () => {
         <EditUserModal 
           user={editingUser} 
           onClose={() => setEditingUser(null)} 
-          onUpdate={() => { loadUsers(); setMsg('✅ User berhasil diperbarui!'); }} 
+          onUpdate={() => { loadUsers(currentPage); setMsg('✅ User berhasil diperbarui!'); }} 
         />
       )}
 
       {/* FACE MANAGER MODAL */}
-      {faceUser && <FaceManager user={faceUser} onClose={() => setFaceUser(null)} onUpdate={loadUsers} />}
+      {faceUser && <FaceManager user={faceUser} onClose={() => setFaceUser(null)} onUpdate={() => loadUsers(currentPage)} />}
 
     </div>
   );

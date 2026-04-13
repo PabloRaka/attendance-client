@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
-import { Camera, Upload, CheckCircle, AlertCircle, User, ImageIcon, X, RefreshCw, Key, Shield } from 'lucide-react';
+import { Camera, CheckCircle, AlertCircle, User, X, RefreshCw, Key, Shield } from 'lucide-react';
 
 // Compress image to max 640px, quality 80% to reduce upload size over slow connections
 const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
-import { Scan, CheckCircle, AlertCircle, Camera, ImageIcon, X, ArrowRight, UserCheck } from 'lucide-react';
+import { Scan, CheckCircle, AlertCircle, Camera, X, ArrowRight, UserCheck } from 'lucide-react';
 
 // Compress image to max 640px, quality 80% to reduce upload size over slow connections
 const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =>
@@ -38,7 +38,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<{ success: boolean; message: string; detail?: string } | null>(null);
   const [cameraError, setCameraError] = useState('');
-  const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     handleSelectCamera();
@@ -84,22 +83,11 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     }, 'image/jpeg', 0.92);
   };
 
-  const handleAutoCapture = () => {
-    let count = 3;
-    setCountdown(count);
-    const iv = setInterval(() => {
-      count--;
-      if (count <= 0) { clearInterval(iv); setCountdown(null); handleCapture(); }
-      else setCountdown(count);
-    }, 1000);
-  };
-
   const handleRetake = () => {
     stopCamera();
     setCapturedBlob(null);
     setPreviewUrl(null);
     setResult(null);
-    setCountdown(null);
     setCameraError('');
     setPhase('camera');
     handleSelectCamera();
