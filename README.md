@@ -34,7 +34,7 @@ A professional Face Recognition based attendance management system built with Re
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd attandance/frontend
+   cd attendance/frontend
    ```
 
 2. **Install dependencies**
