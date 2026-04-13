@@ -42,7 +42,7 @@ const Login = () => {
               <span className="text-2xl font-black text-[#817BB9]">A</span>
             </div>
             <h1 className="text-2xl font-black tracking-tight text-gray-900 mb-1">
-              Attandence <span className="text-[#817BB9]">IBIK</span>
+              Attendance <span className="text-[#817BB9]">IBIK</span>
             </h1>
             <p className="text-gray-400 font-bold text-[11px] tracking-widest uppercase">
               Sistem Informasi Attendance
