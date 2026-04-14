@@ -21,9 +21,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getCookie = (name: string): string | null => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(getCookie('token'));
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = () => {
@@ -32,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .then((data: any) => setUser(data))
         .catch(() => {
           setToken(null);
-          localStorage.removeItem('token');
+          document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
         })
         .finally(() => setIsLoading(false));
     } else {
@@ -44,15 +51,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchProfile();
   }, [token]);
 
+  // Sync session across tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'attendance_auth_sync') {
+        const newToken = getCookie('token');
+        if (newToken !== token) {
+          setToken(newToken);
+          if (!newToken) setUser(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [token]);
+
   const login = (newToken: string) => {
-    localStorage.setItem('token', newToken);
+    // Set session cookie (no expires/max-age means it clears on close)
+    document.cookie = `token=${newToken}; path=/; SameSite=Lax`;
     setToken(newToken);
+    // Signal other tabs
+    localStorage.setItem('attendance_auth_sync', Date.now().toString());
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
     setToken(null);
     setUser(null);
+    // Signal other tabs
+    localStorage.setItem('attendance_auth_sync', Date.now().toString());
   };
 
   const refreshProfile = () => {
