@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -19,13 +19,19 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmLogout = () => {
     logout();
     navigate('/login');
+    setIsLogoutModalOpen(false);
   };
 
   const menuItems: MenuItem[] = [
@@ -168,6 +174,38 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
             <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.1em]">© 2026 Attendance IBIK</p>
         </div>
       </aside>
+      {/* Logout Confirmation Modal */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-[32px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <LogOut className="w-10 h-10 text-red-500" />
+              </div>
+              
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Konfirmasi Keluar</h2>
+              <p className="text-slate-500 text-sm font-medium mb-8">
+                Are you sure you want to leave?
+              </p>
+
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setIsLogoutModalOpen(false)}
+                  className="flex-1 px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-[20px] transition-all font-black text-[10px] uppercase tracking-widest"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={confirmLogout}
+                  className="flex-1 px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-[20px] transition-all font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/20"
+                >
+                  Keluar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

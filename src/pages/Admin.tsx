@@ -67,7 +67,7 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
 
   return (
     <div className="fixed inset-0 z-[200] bg-slate-900/40 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-md rounded-[32px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300">
+      <div className="bg-white w-full max-w-lg rounded-[32px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300">
         <button onClick={() => { stopCamera(); onClose(); }}
           className="absolute right-6 top-6 z-50 p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors">
           <X className="w-5 h-5" />
@@ -105,10 +105,10 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
 
           {phase === 'camera' && (
             <div className="space-y-4">
-              <div className="relative aspect-square bg-slate-100 rounded-[28px] overflow-hidden">
+              <div className="relative aspect-[4/3] bg-slate-100 rounded-[24px] overflow-hidden shadow-inner">
                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                   <div className="w-40 h-52 rounded-[32px] border-4 border-dashed border-white/30" />
+                   <div className="w-52 h-64 rounded-[40px] border-4 border-dashed border-white/40" />
                 </div>
               </div>
               <button onClick={capture} className="w-full bg-[#817BB9] text-white font-black py-4 rounded-[20px] shadow-lg shadow-[#817BB9]/20 transition-all flex items-center justify-center gap-2">
@@ -119,7 +119,7 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
 
           {previewUrl && (phase === 'preview' || phase === 'uploading') && (
             <div className="space-y-6">
-              <div className="relative aspect-square bg-slate-100 rounded-[32px] overflow-hidden shadow-xl border-4 border-white">
+              <div className="relative aspect-[4/3] bg-slate-100 rounded-[24px] overflow-hidden shadow-inner">
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                 {phase === 'uploading' && (
                   <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#817BB9]/10 border-t-[#817BB9] rounded-full animate-spin" /></div>
