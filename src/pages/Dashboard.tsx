@@ -444,7 +444,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
               <div className="flex gap-4">
                 {phase === 'camera' && !cameraError && (
                   <>
-                    <button onClick={handleRetake} className="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[20px] transition-all font-bold text-sm">
+                    <button onClick={handleClose} className="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[20px] transition-all font-bold text-sm">
                       Kembali
                     </button>
                     <button 
@@ -508,18 +508,26 @@ const Dashboard = () => {
   }, [user]);
 
   const handleCloseTutorial = async () => {
-    if (!user || user.has_seen_tutorial || isClosingTutorial) {
+    if (!user || isClosingTutorial) {
       setIsTutorialOpen(false);
       return;
     }
 
+    if (user.has_seen_tutorial) {
+      setIsTutorialOpen(false);
+      return;
+    }
+
+    setIsTutorialOpen(false);
     setIsClosingTutorial(true);
     try {
+      setUser({ ...user, has_seen_tutorial: true });
       const updatedUser: any = await api.user.updateTutorialStatus(true);
       setUser(updatedUser);
-      setIsTutorialOpen(false);
     } catch (err: any) {
+      setUser(user);
       setAttendanceWarning(err || 'Gagal menyimpan status tutorial.');
+      setIsTutorialOpen(true);
     } finally {
       setIsClosingTutorial(false);
     }
