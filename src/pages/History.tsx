@@ -161,7 +161,7 @@ const History = () => {
   const forceAttendance = async (userId: number, type: 'in' | 'out') => {
     try {
       await api.admin.forceAttendance(userId, type);
-      setMsg({ text: `Berhasil mencatat absen ${type} secara paksa`, type: 'success' });
+      setMsg({ text: `Berhasil mencatat presensi ${type} secara paksa`, type: 'success' });
       fetchData(currentPage);
       setTimeout(() => setMsg(null), 3000);
     } catch (err) {

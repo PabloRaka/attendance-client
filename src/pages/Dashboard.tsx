@@ -82,7 +82,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">Tutorial Singkat Presensi</h2>
-            <p className="text-slate-500 text-xs sm:text-sm font-bold mt-1">Ikuti alur ini sebelum mulai absen.</p>
+            <p className="text-slate-500 text-xs sm:text-sm font-bold mt-1">Ikuti alur ini sebelum mulai presensi.</p>
           </div>
         </div>
 
@@ -336,7 +336,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
       const res: any = await api.attendance.scanFace(formData);
       setResult({
         success: true,
-        message: `${res.user} berhasil absen ${res.type === 'in' ? 'masuk 🟢' : 'keluar 🔴'}${res.attendance_status ? ` (${res.attendance_status})` : ''}`,
+        message: `${res.user} berhasil presensi ${res.type === 'in' ? 'masuk 🟢' : 'keluar 🔴'}${res.attendance_status ? ` (${res.attendance_status})` : ''}`,
         detail: `Pukul ${new Date(res.time).toLocaleTimeString('id-ID')} · Kemiripan wajah: ${Math.round((res.similarity || 0) * 100)}%`,
       });
     } catch (err: any) {
@@ -575,7 +575,7 @@ const Dashboard = () => {
     try {
       const alreadyCompleted = await hasCompletedTodayAttendance();
       if (alreadyCompleted) {
-        setAttendanceWarning('Anda sudah absen masuk dan keluar hari ini.');
+        setAttendanceWarning('Anda sudah presensi masuk dan keluar hari ini.');
         return;
       }
 
