@@ -20,6 +20,23 @@ const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =
     img.src = url;
   });
 
+// ─── Camera Quality Utils ──────────────────────────────────────────────────
+
+const checkBrightness = (video: HTMLVideoElement): number => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 40;
+  canvas.height = 30;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return 100;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let brightness = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    brightness += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+  }
+  return brightness / (canvas.width * canvas.height);
+};
+
 // ─── Face Recognition Modal ──────────────────────────────────────────────────
 
 type FacePhase = 'choose' | 'camera' | 'preview' | 'processing' | 'result';
@@ -39,10 +56,82 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const [result, setResult] = useState<{ success: boolean; message: string; detail?: string } | null>(null);
   const [cameraError, setCameraError] = useState('');
 
+  // Real-time quality states
+  const [quality, setQuality] = useState<{ ok: boolean; message: string }>({ ok: true, message: '' });
+  const [_attempts, setAttempts] = useState(0);
+  const [detector, setDetector] = useState<any>(null);
+  const [bypass, setBypass] = useState(false);
+
   useEffect(() => {
     handleSelectCamera();
+    initFaceDetector();
     return () => stopCamera();
   }, []);
+
+  const initFaceDetector = async () => {
+    try {
+      // @ts-ignore
+      const vision = (window as any).vision || await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0');
+      const filesetResolver = await vision.FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+      );
+      const faceDetector = await vision.FaceDetector.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite`,
+          delegate: "GPU"
+        },
+        runningMode: "VIDEO"
+      });
+      setDetector(faceDetector);
+    } catch (err) {
+      console.error("Failed to init face detector:", err);
+    }
+  };
+
+  // Analysis Loop
+  useEffect(() => {
+    if (phase !== 'camera' || !videoRef.current || !detector) return;
+    
+    let animationFrameId: number;
+    const analyzeTrack = async () => {
+      if (!videoRef.current || videoRef.current.readyState < 2) {
+        animationFrameId = requestAnimationFrame(analyzeTrack);
+        return;
+      }
+
+      const video = videoRef.current;
+      
+      // 1. Check Brightness
+      const brightness = checkBrightness(video);
+      if (brightness < 40) {
+        setQuality({ ok: false, message: 'Pencahayaan terlalu gelap 🌙' });
+      } else {
+        // 2. Check Face
+        const detections = detector.detectForVideo(video, performance.now()).detections;
+        if (detections.length === 0) {
+          setQuality({ ok: false, message: 'Wajah tidak terdeteksi 🔍' });
+        } else {
+          const face = detections[0].boundingBox;
+          const videoArea = video.videoWidth * video.videoHeight;
+          const faceArea = face.width * face.height;
+          const faceRatio = faceArea / videoArea;
+
+          if (faceRatio > 0.45) {
+            setQuality({ ok: false, message: 'Wajah terlalu dekat 🤳' });
+          } else if (faceRatio < 0.05) {
+            setQuality({ ok: false, message: 'Wajah terlalu jauh 📏' });
+          } else {
+            setQuality({ ok: true, message: '' });
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(analyzeTrack);
+    };
+
+    analyzeTrack();
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [phase, detector]);
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -68,6 +157,15 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
 
 
   const handleCapture = () => {
+    if (!quality.ok && !bypass) {
+      setAttempts(prev => {
+        const next = prev + 1;
+        if (next >= 3) setBypass(true);
+        return next;
+      });
+      return;
+    }
+
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -90,6 +188,9 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     setResult(null);
     setCameraError('');
     setPhase('camera');
+    setQuality({ ok: true, message: '' });
+    setAttempts(0);
+    setBypass(false);
     handleSelectCamera();
   };
 
@@ -183,9 +284,27 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
                 />
 
                 {phase === 'camera' && !cameraError && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-52 h-64 rounded-[40px] border-4 border-dashed border-white/40" />
-                  </div>
+                  <>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className={`w-52 h-64 rounded-[40px] border-4 border-dashed transition-colors duration-300 ${quality.ok ? 'border-white/40' : 'border-red-500/60'}`} />
+                    </div>
+
+                    {quality.message && (
+                      <div className="absolute bottom-6 left-0 right-0 flex justify-center px-6">
+                        <div className="bg-red-500/90 backdrop-blur-md text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg animate-in slide-in-from-bottom-2">
+                          <AlertCircle className="w-3 h-3" /> {quality.message}
+                        </div>
+                      </div>
+                    )}
+
+                    {bypass && !quality.ok && (
+                      <div className="absolute top-6 left-0 right-0 flex justify-center px-6">
+                        <div className="bg-amber-500/90 backdrop-blur-md text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg animate-in slide-in-from-top-2">
+                           Bypass Aktif: Ambil foto meskipun kualitas kurang
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {previewUrl && (
@@ -223,8 +342,15 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
                     <button onClick={handleRetake} className="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[20px] transition-all font-bold text-sm">
                       Kembali
                     </button>
-                    <button onClick={handleCapture} className="flex-1 bg-[#817BB9] hover:bg-[#6e68a3] text-white font-black py-4 rounded-[20px] shadow-lg shadow-[#817BB9]/20 transition-all flex items-center justify-center gap-2">
-                       <Camera className="w-5 h-5" /> Ambil Foto
+                    <button 
+                      onClick={handleCapture} 
+                      className={`flex-1 font-black py-4 rounded-[20px] shadow-lg transition-all flex items-center justify-center gap-2 
+                        ${quality.ok || bypass 
+                          ? 'bg-[#817BB9] hover:bg-[#6e68a3] text-white shadow-[#817BB9]/20' 
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                    >
+                       <Camera className="w-5 h-5" /> 
+                       {quality.ok || bypass ? 'Ambil Foto' : 'Perbaiki Posisi'}
                     </button>
                   </>
                 )}
