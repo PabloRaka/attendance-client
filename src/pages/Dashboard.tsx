@@ -495,7 +495,7 @@ const Dashboard = () => {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isClosingTutorial, setIsClosingTutorial] = useState(false);
   const [attendanceWarning, setAttendanceWarning] = useState('');
-  const [isCheckingAttendance, setIsCheckingAttendance] = useState(false);
+  const [, setIsCheckingAttendance] = useState(false);
 
   const hasFacePhoto = user?.has_face;
 
