@@ -259,11 +259,22 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900">Scan Wajah</h2>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
-                {phase === 'camera' && 'Ambil Foto Langsung'}
-                {phase === 'preview' && 'Review Hasil Foto'}
-                {(phase === 'processing' || phase === 'result') && 'Verifikasi Wajah...'}
-              </p>
+              <div className="flex flex-col gap-0.5">
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
+                  {phase === 'camera' && 'Ambil Foto Langsung'}
+                  {phase === 'preview' && 'Review Hasil Foto'}
+                  {(phase === 'processing' || phase === 'result') && 'Verifikasi Wajah...'}
+                </p>
+                {phase === 'camera' && (
+                  <div className="bg-yellow-100 border border-yellow-200 rounded-2xl px-4 py-3 mt-4 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2 duration-500">
+                    <span className="text-xl">💡</span>
+                    <p className="text-yellow-800 text-[13px] font-black leading-tight uppercase tracking-wide">
+                      Pastikan bahu terlihat<br/>
+                      <span className="text-yellow-600/80 text-[11px] font-bold">Agar dapat diverifikasi sistem</span>
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -479,9 +490,14 @@ const Dashboard = () => {
              <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-white/5 rounded-full" />
              <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Pusat Bantuan</h4>
              <p className="text-sm font-bold text-white/80 mb-4">Butuh bantuan mengenai data wajah Anda? Hubungi Admin.</p>
-             <button className="text-[10px] font-black uppercase tracking-widest text-[#817BB9] hover:text-white transition-colors">
+             <a 
+                href="https://wa.me/6281389888933" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-[10px] font-black uppercase tracking-widest text-[#817BB9] hover:text-white transition-colors block"
+             >
                 Kontak Sekarang →
-             </button>
+             </a>
           </div>
         </div>
       </div>

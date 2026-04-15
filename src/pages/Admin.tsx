@@ -19,11 +19,30 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
   const [phase, setPhase] = useState<'choose' | 'camera' | 'preview' | 'uploading'>('choose');
   const [faceBlob, setFaceBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [existingFaceUrl, setExistingFaceUrl] = useState<string | null>(null);
+  const [isLoadingFace, setIsLoadingFace] = useState(false);
   const [msg, setMsg] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    let url: string | null = null;
+    if (user.has_face) {
+      setIsLoadingFace(true);
+      api.admin.getUserFace(user.id)
+        .then((blob: any) => {
+          url = URL.createObjectURL(blob);
+          setExistingFaceUrl(url);
+        })
+        .catch(err => console.error("Gagal memuat foto:", err))
+        .finally(() => setIsLoadingFace(false));
+    }
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [user]);
 
   const stopCamera = () => streamRef.current?.getTracks().forEach(t => t.stop());
 
@@ -75,8 +94,8 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
 
         <div className="p-8">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#817BB9]/10 flex items-center justify-center text-[#817BB9] font-black">
-               {user.username[0].toUpperCase()}
+            <div className="w-12 h-12 rounded-2xl bg-[#817BB9]/10 flex items-center justify-center text-[#817BB9] font-black text-xl uppercase">
+               {user.username[0]}
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900 leading-tight">Kelola Wajah</h2>
@@ -91,15 +110,29 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
           {msg && <div className={`mb-6 p-4 rounded-2xl text-[10px] font-bold ${msg.includes('❌') ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600'}`}>{msg}</div>}
 
           {phase === 'choose' && (
-            <div className="grid grid-cols-2 gap-4">
-              <button onClick={openCamera} className="group flex flex-col items-center gap-4 p-8 rounded-3xl bg-slate-50 border-2 border-transparent hover:border-[#817BB9]/20 hover:bg-[#817BB9]/5 transition-all">
-                <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform"><Camera className="w-6 h-6 text-[#817BB9]" /></div>
-                <p className="font-black text-slate-900 text-xs">Kamera</p>
-              </button>
-              <button onClick={() => galleryRef.current?.click()} className="group flex flex-col items-center gap-4 p-8 rounded-3xl bg-slate-50 border-2 border-transparent hover:border-[#817BB9]/20 hover:bg-[#817BB9]/5 transition-all">
-                <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform"><ImageIcon className="w-6 h-6 text-[#817BB9]" /></div>
-                <p className="font-black text-slate-900 text-xs">Galeri</p>
-              </button>
+            <div className="space-y-6">
+              {user.has_face && (
+                <div className="relative aspect-[4/3] bg-slate-100 rounded-[24px] overflow-hidden shadow-inner flex items-center justify-center">
+                  {isLoadingFace ? (
+                    <div className="w-8 h-8 border-4 border-[#817BB9]/10 border-t-[#817BB9] rounded-full animate-spin" />
+                  ) : existingFaceUrl ? (
+                    <img src={existingFaceUrl} alt="Data Wajah" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-slate-400 text-xs font-black">Tidak dapat memuat foto</span>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <button onClick={openCamera} className="group flex flex-col items-center gap-4 p-6 rounded-3xl bg-slate-50 border-2 border-transparent hover:border-[#817BB9]/20 hover:bg-[#817BB9]/5 transition-all">
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform"><Camera className="w-5 h-5 text-[#817BB9]" /></div>
+                  <p className="font-black text-slate-900 text-xs text-center leading-tight">Ambil via<br/>Kamera</p>
+                </button>
+                <button onClick={() => galleryRef.current?.click()} className="group flex flex-col items-center gap-4 p-6 rounded-3xl bg-slate-50 border-2 border-transparent hover:border-[#817BB9]/20 hover:bg-[#817BB9]/5 transition-all">
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform"><ImageIcon className="w-5 h-5 text-[#817BB9]" /></div>
+                  <p className="font-black text-slate-900 text-xs text-center leading-tight">Unggah dari<br/>Galeri</p>
+                </button>
+              </div>
             </div>
           )}
 
@@ -126,8 +159,8 @@ const FaceManager: React.FC<FaceManagerProps> = ({ user, onClose, onUpdate }) =>
                 )}
               </div>
               <div className="flex gap-4">
-                <button onClick={() => setPhase('choose')} disabled={phase === 'uploading'} className="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-[20px] text-xs">Ulangi</button>
-                <button onClick={handleUpload} disabled={phase === 'uploading'} className="flex-1 bg-[#817BB9] text-white font-black py-4 rounded-[20px] text-xs shadow-lg shadow-[#817BB9]/20 uppercase tracking-widest">Kirim Foto</button>
+                <button onClick={() => setPhase('choose')} disabled={phase === 'uploading'} className="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-[20px] text-xs">Batal</button>
+                <button onClick={handleUpload} disabled={phase === 'uploading'} className="flex-1 bg-[#817BB9] text-white font-black py-4 rounded-[20px] text-xs shadow-lg shadow-[#817BB9]/20 uppercase tracking-widest">Simpan Foto</button>
               </div>
             </div>
           )}

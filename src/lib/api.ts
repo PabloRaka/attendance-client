@@ -61,7 +61,7 @@ export const api = {
     getProfile: () => apiClient.get('/user/profile'),
     getHistory: (page: number = 1, size: number = 15) => 
       apiClient.get('/user/history', { params: { page, size } }),
-    changePassword: (formData: FormData) => apiClient.post('/user/change-password', formData),
+
     uploadFace: (formData: FormData) => apiClient.post('/user/upload-face', formData),
     getFacePhoto: () => apiClient.get('/user/face-photo', { responseType: 'blob' }),
     getFacePhotoUrl: () => `${API_BASE_URL}/user/face-photo`,

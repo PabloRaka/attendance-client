@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
-import { Camera, CheckCircle, AlertCircle, User, X, RefreshCw, Key, Shield } from 'lucide-react';
+import { Camera, CheckCircle, AlertCircle, User, X, RefreshCw, Shield } from 'lucide-react';
 
 // Compress image to max 640px, quality 80% to reduce upload size over slow connections
 const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =>
@@ -100,7 +100,16 @@ const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900">Capture Wajah</h2>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Live Camera Preview</p>
+              <div className="flex flex-col gap-0.5">
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Live Camera Preview</p>
+                <div className="bg-yellow-100 border border-yellow-200 rounded-2xl px-4 py-3 mt-3 flex items-start gap-3 shadow-sm">
+                  <span className="text-xl">💡</span>
+                  <p className="text-yellow-800 text-[13px] font-black leading-tight uppercase tracking-wide">
+                    Pastikan bahu terlihat<br/>
+                    <span className="text-yellow-600/80 text-[11px] font-bold">Agar dapat diverifikasi sistem</span>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -145,10 +154,6 @@ const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
 
 const Profile = () => {
   const { user, setUser } = useAuth();
-  const [curPass, setCurPass] = useState('');
-  const [newPass, setNewPass] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
 
   // Face upload states
   const [faceFile, setFaceFile] = useState<File | Blob | null>(null);
@@ -178,25 +183,7 @@ const Profile = () => {
     };
   }, [hasFace, user?.id]);
 
-  // Password change
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setMessage('');
-    const formData = new FormData();
-    formData.append('current_password', curPass);
-    formData.append('new_password', newPass);
-    try {
-      await api.user.changePassword(formData);
-      setMessage('Password updated successfully!');
-      setCurPass('');
-      setNewPass('');
-    } catch (err: any) {
-      setMessage(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -363,42 +350,18 @@ const Profile = () => {
                </div>
             </div>
 
-            {/* Change Password */}
-            <div className="bg-white rounded-[40px] p-10 border border-slate-100 shadow-2xl shadow-slate-200/50">
-               <div className="flex items-center gap-4 mb-8">
-                 <div className="w-10 h-10 bg-orange-100 text-orange-500 rounded-xl flex items-center justify-center">
-                    <Key className="w-5 h-5" />
-                 </div>
-                 <h2 className="text-xl font-black text-slate-900">Keamanan</h2>
-               </div>
-
-               {message && (
-                 <div className="mb-6 p-4 rounded-2xl text-xs font-bold bg-green-50 text-green-600">
-                   {message}
-                 </div>
-               )}
-
-               <form onSubmit={handleChangePassword} className="space-y-4">
-                 <input
-                   type="password"
-                   placeholder="Password Lama"
-                   required
-                   value={curPass}
-                   onChange={(e) => setCurPass(e.target.value)}
-                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#817BB9]/30 transition-all"
-                 />
-                 <input
-                   type="password"
-                   placeholder="Password Baru"
-                   required
-                   value={newPass}
-                   onChange={(e) => setNewPass(e.target.value)}
-                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm font-bold placeholder:text-slate-300 focus:outline-none focus:border-[#817BB9]/30 transition-all"
-                 />
-                 <button disabled={isSubmitting} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl text-[11px] uppercase tracking-widest hover:bg-slate-800 transition-all disabled:opacity-50">
-                   {isSubmitting ? 'Memproses...' : 'Ganti Password'}
-                 </button>
-               </form>
+            <div className="bg-slate-900 rounded-[32px] p-8 text-white relative overflow-hidden flex flex-col justify-center">
+               <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-white/5 rounded-full" />
+               <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Pusat Bantuan</h4>
+               <p className="text-sm font-bold text-white/80 mb-4">Butuh bantuan mengenai akun atau data Anda? Hubungi Admin.</p>
+               <a 
+                  href="https://wa.me/6281389888933" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-[10px] font-black uppercase tracking-widest text-[#817BB9] hover:text-white transition-all text-left block"
+               >
+                  Kontak Sekarang →
+               </a>
             </div>
           </div>
 
