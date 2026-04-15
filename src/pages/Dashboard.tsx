@@ -55,16 +55,24 @@ interface FaceModalProps {
 interface TutorialModalProps {
   hasFacePhoto?: boolean;
   onClose: () => Promise<void> | void;
+  acknowledged: boolean;
+  onAcknowledgedChange: (value: boolean) => void;
   isClosing: boolean;
 }
 
-const TutorialModal: React.FC<TutorialModalProps> = ({ hasFacePhoto, onClose, isClosing }) => (
+const TutorialModal: React.FC<TutorialModalProps> = ({
+  hasFacePhoto,
+  onClose,
+  acknowledged,
+  onAcknowledgedChange,
+  isClosing,
+}) => (
   <div className="fixed inset-0 z-[210] bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
     <div className="bg-white w-full max-w-xl rounded-[32px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300">
       <button
         onClick={onClose}
-        disabled={isClosing}
-        className="absolute right-6 top-6 z-50 p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors"
+        disabled={!acknowledged || isClosing}
+        className="absolute right-6 top-6 z-50 p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <X className="w-5 h-5" />
       </button>
@@ -116,11 +124,23 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ hasFacePhoto, onClose, is
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-8">
+        <label className="mt-8 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acknowledged}
+            onChange={(e) => onAcknowledgedChange(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-slate-300 text-[#817BB9] focus:ring-[#817BB9]"
+          />
+          <span className="text-sm font-medium text-slate-600">
+            Saya sudah memahami tutorial ini dan tidak perlu ditampilkan lagi.
+          </span>
+        </label>
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
           {!hasFacePhoto && (
             <Link
               to="/profile"
-              onClick={onClose}
+              onClick={() => onAcknowledgedChange(false)}
               className="flex-1 bg-[#817BB9] hover:bg-[#6e68a3] text-white font-black py-4 rounded-[20px] shadow-lg shadow-[#817BB9]/20 transition-all flex items-center justify-center gap-2"
             >
               Ke Halaman Profile
@@ -128,8 +148,8 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ hasFacePhoto, onClose, is
           )}
           <button
             onClick={onClose}
-            disabled={isClosing}
-            className="flex-1 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[20px] transition-all font-bold text-sm"
+            disabled={!acknowledged || isClosing}
+            className="flex-1 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[20px] transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isClosing ? 'Menyimpan...' : 'Saya Mengerti'}
           </button>
@@ -494,22 +514,23 @@ const Dashboard = () => {
   const [isFaceOpen, setIsFaceOpen] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isClosingTutorial, setIsClosingTutorial] = useState(false);
+  const [isTutorialAcknowledged, setIsTutorialAcknowledged] = useState(false);
+  const [isTutorialDismissed, setIsTutorialDismissed] = useState(false);
   const [attendanceWarning, setAttendanceWarning] = useState('');
   const [, setIsCheckingAttendance] = useState(false);
 
   const hasFacePhoto = user?.has_face;
 
   useEffect(() => {
-    if (user && !user.has_seen_tutorial) {
+    if (user && !user.has_seen_tutorial && !isTutorialDismissed) {
       setIsTutorialOpen(true);
     } else {
       setIsTutorialOpen(false);
     }
-  }, [user]);
+  }, [user, isTutorialDismissed]);
 
   const handleCloseTutorial = async () => {
-    if (!user || isClosingTutorial) {
-      setIsTutorialOpen(false);
+    if (!user || isClosingTutorial || !isTutorialAcknowledged) {
       return;
     }
 
@@ -518,6 +539,7 @@ const Dashboard = () => {
       return;
     }
 
+    setIsTutorialDismissed(true);
     setIsTutorialOpen(false);
     setIsClosingTutorial(true);
     try {
@@ -526,6 +548,7 @@ const Dashboard = () => {
       setUser(updatedUser);
     } catch (err: any) {
       setUser(user);
+      setIsTutorialDismissed(false);
       setAttendanceWarning(err || 'Gagal menyimpan status tutorial.');
       setIsTutorialOpen(true);
     } finally {
@@ -686,6 +709,8 @@ const Dashboard = () => {
         <TutorialModal
           hasFacePhoto={hasFacePhoto}
           onClose={handleCloseTutorial}
+          acknowledged={isTutorialAcknowledged}
+          onAcknowledgedChange={setIsTutorialAcknowledged}
           isClosing={isClosingTutorial}
         />
       )}
