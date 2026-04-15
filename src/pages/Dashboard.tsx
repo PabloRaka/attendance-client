@@ -515,19 +515,22 @@ const Dashboard = () => {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isClosingTutorial, setIsClosingTutorial] = useState(false);
   const [isTutorialAcknowledged, setIsTutorialAcknowledged] = useState(false);
-  const [isTutorialDismissed, setIsTutorialDismissed] = useState(false);
+  const [hasInitializedTutorial, setHasInitializedTutorial] = useState(false);
   const [attendanceWarning, setAttendanceWarning] = useState('');
   const [, setIsCheckingAttendance] = useState(false);
 
   const hasFacePhoto = user?.has_face;
 
   useEffect(() => {
-    if (user && !user.has_seen_tutorial && !isTutorialDismissed) {
+    if (!user || hasInitializedTutorial) return;
+
+    if (!user.has_seen_tutorial) {
       setIsTutorialOpen(true);
-    } else {
-      setIsTutorialOpen(false);
+      setIsTutorialAcknowledged(false);
     }
-  }, [user, isTutorialDismissed]);
+
+    setHasInitializedTutorial(true);
+  }, [user, hasInitializedTutorial]);
 
   const handleCloseTutorial = async () => {
     if (!user || isClosingTutorial || !isTutorialAcknowledged) {
@@ -539,7 +542,6 @@ const Dashboard = () => {
       return;
     }
 
-    setIsTutorialDismissed(true);
     setIsTutorialOpen(false);
     setIsClosingTutorial(true);
     try {
@@ -548,7 +550,6 @@ const Dashboard = () => {
       setUser(updatedUser);
     } catch (err: any) {
       setUser(user);
-      setIsTutorialDismissed(false);
       setAttendanceWarning(err || 'Gagal menyimpan status tutorial.');
       setIsTutorialOpen(true);
     } finally {
