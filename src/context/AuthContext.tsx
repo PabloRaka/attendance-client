@@ -7,6 +7,7 @@ interface User {
   fullname: string;
   role: string;
   has_face: boolean;
+  has_seen_tutorial: boolean;
 }
 
 interface AuthContextType {
@@ -49,6 +50,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchProfile();
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProfile();
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
   }, [token]);
 
   // Sync session across tabs

@@ -105,7 +105,7 @@ const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
                 <div className="bg-yellow-100 border border-yellow-200 rounded-2xl px-4 py-3 mt-3 flex items-start gap-3 shadow-sm">
                   <span className="text-xl">💡</span>
                   <p className="text-yellow-800 text-[13px] font-black leading-tight uppercase tracking-wide">
-                    Pastikan bahu terlihat<br/>
+                    Pastikan bahu terlihat pada frame<br/>
                     <span className="text-yellow-600/80 text-[11px] font-bold">Agar dapat diverifikasi sistem</span>
                   </p>
                 </div>
@@ -255,7 +255,7 @@ const Profile = () => {
                <div className="w-10 h-10 bg-[#817BB9]/10 rounded-xl flex items-center justify-center">
                   <Camera className="w-5 h-5 text-[#817BB9]" />
                </div>
-               <h2 className="text-xl font-black text-slate-900">Data Wajah Absensi</h2>
+               <h2 className="text-xl font-black text-slate-900">Data Wajah Presensi</h2>
              </div>
 
              <div className="flex flex-col md:flex-row gap-10 items-center md:items-start">

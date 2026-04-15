@@ -61,6 +61,8 @@ export const api = {
     getProfile: () => apiClient.get('/user/profile'),
     getHistory: (page: number = 1, size: number = 15) => 
       apiClient.get('/user/history', { params: { page, size } }),
+    updateTutorialStatus: (hasSeenTutorial: boolean) =>
+      apiClient.patch('/user/tutorial-status', { has_seen_tutorial: hasSeenTutorial }),
 
     uploadFace: (formData: FormData) => apiClient.post('/user/upload-face', formData),
     getFacePhoto: () => apiClient.get('/user/face-photo', { responseType: 'blob' }),
@@ -87,4 +89,3 @@ export const api = {
     }),
   },
 };
-

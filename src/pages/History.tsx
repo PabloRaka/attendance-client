@@ -55,7 +55,7 @@ const MapModal: React.FC<MapModalProps> = ({ lat, lon, locationName, onClose }) 
               <MapPin className="w-6 h-6 text-blue-500" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 leading-tight">Lokasi Absensi</h2>
+              <h2 className="text-xl font-black text-slate-900 leading-tight">Lokasi Presensi</h2>
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">
                 {locationName || `${lat}, ${lon}`}
               </p>
@@ -231,7 +231,7 @@ const History = () => {
               {isAdmin ? 'Log Presensi Global' : 'Riwayat Kehadiran'}
             </h1>
             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-              {isAdmin ? 'Memantau seluruh aktivitas absensi user' : 'Laporan Aktivitas Absensi Anda'}
+              {isAdmin ? 'Memantau seluruh aktivitas presensi user' : 'Laporan Aktivitas Presensi Anda'}
             </p>
           </div>
         </div>
@@ -339,7 +339,7 @@ const History = () => {
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 {isAdmin && <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pengguna</th>}
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu & Tanggal</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tipe Absensi</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tipe Presensi</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Metode</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Lokasi</th>
@@ -362,7 +362,7 @@ const History = () => {
                     <div className="flex flex-col items-center gap-4 text-slate-300">
                         <HistoryIcon className="w-16 h-16 stroke-[1.5] opacity-20" />
                         <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
-                          {search ? `Tidak ada hasil untuk "${search}"` : 'Belum ada catatan absensi.'}
+                          {search ? `Tidak ada hasil untuk "${search}"` : 'Belum ada catatan presensi.'}
                         </p>
                     </div>
                   </td>
@@ -475,7 +475,7 @@ const History = () => {
               <div className="flex flex-col items-center gap-4 text-slate-300">
                   <HistoryIcon className="w-16 h-16 stroke-[1.5] opacity-20" />
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
-                    {search ? `Tidak ada hasil untuk "${search}"` : 'Belum ada catatan absensi.'}
+                    {search ? `Tidak ada hasil untuk "${search}"` : 'Belum ada catatan presensi.'}
                   </p>
               </div>
             </div>

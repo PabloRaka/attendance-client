@@ -2,6 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { Scan, CheckCircle, AlertCircle, Camera, X, ArrowRight, UserCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+interface AttendanceLog {
+  id: number;
+  timestamp: string;
+  attendance_type: 'in' | 'out';
+}
 
 // Compress image to max 640px, quality 80% to reduce upload size over slow connections
 const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =>
@@ -44,6 +51,93 @@ type FacePhase = 'choose' | 'camera' | 'preview' | 'processing' | 'result';
 interface FaceModalProps {
   onClose: () => void;
 }
+
+interface TutorialModalProps {
+  hasFacePhoto?: boolean;
+  onClose: () => Promise<void> | void;
+  isClosing: boolean;
+}
+
+const TutorialModal: React.FC<TutorialModalProps> = ({ hasFacePhoto, onClose, isClosing }) => (
+  <div className="fixed inset-0 z-[210] bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="bg-white w-full max-w-xl rounded-[32px] overflow-hidden relative shadow-2xl animate-in zoom-in-95 duration-300">
+      <button
+        onClick={onClose}
+        disabled={isClosing}
+        className="absolute right-6 top-6 z-50 p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors"
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      <div className="p-8 sm:p-10">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-[#817BB9]/10 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-[#817BB9]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-900">Tutorial Singkat Presensi</h2>
+            <p className="text-slate-500 text-sm font-bold mt-1">Ikuti alur ini sebelum mulai absen.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-[#817BB9] text-white flex items-center justify-center text-sm font-black flex-shrink-0">1</div>
+            <div>
+              <p className="text-slate-900 font-black">Upload wajah di halaman Profile</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">
+                {hasFacePhoto ? 'Foto wajah Anda sudah tersedia. Anda bisa lanjut ke langkah berikutnya.' : 'Sistem butuh 1 foto wajah sebagai data verifikasi utama.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-[#817BB9] text-white flex items-center justify-center text-sm font-black flex-shrink-0">2</div>
+            <div>
+              <p className="text-slate-900 font-black">Buka menu Presensi Wajah di dashboard</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">Frontend akan cek dulu apakah presnsi hari ini masih bisa dilakukan.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-[#817BB9] text-white flex items-center justify-center text-sm font-black flex-shrink-0">3</div>
+            <div>
+              <p className="text-slate-900 font-black">Arahkan wajah ke kamera dengan pencahayaan cukup</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">Pastikan wajah terlihat jelas agar verifikasi berhasil.</p>
+            </div>
+          </div>
+
+          <div className="flex gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-[#817BB9] text-white flex items-center justify-center text-sm font-black flex-shrink-0">4</div>
+            <div>
+              <p className="text-slate-900 font-black">Presensi hanya 1 kali masuk dan 1 kali keluar per hari</p>
+              <p className="text-slate-500 text-sm font-medium mt-1">Jika presensi hari ini sudah lengkap, sistem akan langsung menolak.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 mt-8">
+          {!hasFacePhoto && (
+            <Link
+              to="/profile"
+              onClick={onClose}
+              className="flex-1 bg-[#817BB9] hover:bg-[#6e68a3] text-white font-black py-4 rounded-[20px] shadow-lg shadow-[#817BB9]/20 transition-all flex items-center justify-center gap-2"
+            >
+              Ke Halaman Profile
+            </Link>
+          )}
+          <button
+            onClick={onClose}
+            disabled={isClosing}
+            className="flex-1 px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[20px] transition-all font-bold text-sm"
+          >
+            {isClosing ? 'Menyimpan...' : 'Saya Mengerti'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -269,7 +363,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
                   <div className="bg-yellow-100 border border-yellow-200 rounded-2xl px-4 py-3 mt-4 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2 duration-500">
                     <span className="text-xl">💡</span>
                     <p className="text-yellow-800 text-[13px] font-black leading-tight uppercase tracking-wide">
-                      Pastikan bahu terlihat<br/>
+                      Pastikan bahu terlihat area frame<br/>
                       <span className="text-yellow-600/80 text-[11px] font-bold">Agar dapat diverifikasi sistem</span>
                     </p>
                   </div>
@@ -396,10 +490,79 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [isFaceOpen, setIsFaceOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isClosingTutorial, setIsClosingTutorial] = useState(false);
+  const [attendanceWarning, setAttendanceWarning] = useState('');
+  const [isCheckingAttendance, setIsCheckingAttendance] = useState(false);
 
   const hasFacePhoto = user?.has_face;
+
+  useEffect(() => {
+    if (user && !user.has_seen_tutorial) {
+      setIsTutorialOpen(true);
+    } else {
+      setIsTutorialOpen(false);
+    }
+  }, [user]);
+
+  const handleCloseTutorial = async () => {
+    if (!user || user.has_seen_tutorial || isClosingTutorial) {
+      setIsTutorialOpen(false);
+      return;
+    }
+
+    setIsClosingTutorial(true);
+    try {
+      const updatedUser: any = await api.user.updateTutorialStatus(true);
+      setUser(updatedUser);
+      setIsTutorialOpen(false);
+    } catch (err: any) {
+      setAttendanceWarning(err || 'Gagal menyimpan status tutorial.');
+    } finally {
+      setIsClosingTutorial(false);
+    }
+  };
+
+  const hasCompletedTodayAttendance = async () => {
+    const res: any = await api.user.getHistory(1, 10);
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+
+    const todayRecords = (res.items as AttendanceLog[]).filter((item) => {
+      const itemDate = new Date(item.timestamp).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      return itemDate === today;
+    });
+
+    const hasCheckIn = todayRecords.some((item) => item.attendance_type === 'in');
+    const hasCheckOut = todayRecords.some((item) => item.attendance_type === 'out');
+    return hasCheckIn && hasCheckOut;
+  };
+
+  const handleOpenFaceAttendance = async () => {
+    if (!hasFacePhoto) {
+      setAttendanceWarning('');
+      setIsFaceOpen(true);
+      return;
+    }
+
+    setIsCheckingAttendance(true);
+    setAttendanceWarning('');
+
+    try {
+      const alreadyCompleted = await hasCompletedTodayAttendance();
+      if (alreadyCompleted) {
+        setAttendanceWarning('Anda sudah absen masuk dan keluar hari ini.');
+        return;
+      }
+
+      setIsFaceOpen(true);
+    } catch (err: any) {
+      setAttendanceWarning(err || 'Gagal memeriksa status presensi hari ini.');
+    } finally {
+      setIsCheckingAttendance(false);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -423,11 +586,18 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {attendanceWarning && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-[24px] px-6 py-4 flex items-center gap-3 font-bold text-sm shadow-sm">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span>{attendanceWarning}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Face Recognition Main Card */}
         <div className="lg:col-span-8">
            <div 
-             onClick={() => setIsFaceOpen(true)}
+             onClick={handleOpenFaceAttendance}
              className="bg-white rounded-[40px] p-10 border border-slate-100 shadow-2xl shadow-slate-200/50 group cursor-pointer hover:border-[#817BB9]/30 transition-all active:scale-[0.99] relative overflow-hidden"
            >
               <div className="absolute top-0 right-0 p-8 text-slate-100 group-hover:text-[#817BB9]/10 transition-colors">
@@ -439,9 +609,9 @@ const Dashboard = () => {
                   <div className="w-16 h-16 rounded-[24px] bg-[#817BB9]/10 flex items-center justify-center mb-8 group-hover:bg-[#817BB9] group-hover:scale-110 transition-all duration-300">
                     <Scan className="w-8 h-8 text-[#817BB9] group-hover:text-white transition-colors" />
                   </div>
-                  <h3 className="text-3xl font-black text-slate-900 mb-3 group-hover:text-[#817BB9] transition-colors">Absensi Wajah</h3>
+                  <h3 className="text-3xl font-black text-slate-900 mb-3 group-hover:text-[#817BB9] transition-colors">Presensi Wajah</h3>
                   <p className="text-slate-400 font-bold text-sm max-w-sm">
-                    Cara tercepat untuk melakukan absensi melalui sinkronisasi data wajah secara real-time.
+                    Cara tercepat untuk melakukan presensi melalui sinkronisasi data wajah secara real-time.
                   </p>
                 </div>
 
@@ -456,9 +626,6 @@ const Dashboard = () => {
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-2 px-6 py-3 bg-slate-50 rounded-2xl text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
-                     Metode Scan
-                  </div>
                 </div>
               </div>
            </div>
@@ -473,14 +640,18 @@ const Dashboard = () => {
              <ul className="space-y-6">
                 <li className="flex gap-4">
                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-slate-600">1</div>
-                   <p className="text-xs font-bold text-slate-500 leading-relaxed">Klik kartu "Absensi Wajah" untuk mulai.</p>
+                   <p className="text-xs font-bold text-slate-500 leading-relaxed">Upload foto wajah terlebih dahulu di halaman Profile.</p>
                 </li>
                 <li className="flex gap-4">
                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-slate-600">2</div>
-                   <p className="text-xs font-bold text-slate-500 leading-relaxed">Hadapkan wajah ke kamera depan untuk verifikasi.</p>
+                   <p className="text-xs font-bold text-slate-500 leading-relaxed">Setelah foto wajah tersimpan, klik kartu "Presensi Wajah" untuk mulai.</p>
                 </li>
                 <li className="flex gap-4">
                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-slate-600">3</div>
+                   <p className="text-xs font-bold text-slate-500 leading-relaxed">Hadapkan wajah ke kamera depan untuk verifikasi.</p>
+                </li>
+                <li className="flex gap-4">
+                   <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-slate-600">4</div>
                    <p className="text-xs font-bold text-slate-500 leading-relaxed">Pastikan pencahayaan cukup untuk verifikasi sukses.</p>
                 </li>
              </ul>
@@ -503,6 +674,13 @@ const Dashboard = () => {
       </div>
 
       {/* Face Modal */}
+      {isTutorialOpen && (
+        <TutorialModal
+          hasFacePhoto={hasFacePhoto}
+          onClose={handleCloseTutorial}
+          isClosing={isClosingTutorial}
+        />
+      )}
       {isFaceOpen && <FaceModal onClose={() => setIsFaceOpen(false)} />}
     </div>
   );
