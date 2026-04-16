@@ -78,6 +78,7 @@ export const api = {
       apiClient.get('/admin/logs', { params: { page, size, start_date: start, end_date: end, search } }),
     updateUser: (userId: number, data: Record<string, unknown>) => apiClient.put(`/admin/user/${userId}`, data),
     deleteUser: (userId: number) => apiClient.delete(`/admin/user/${userId}`),
+    createUser: (formData: FormData) => apiClient.post('/admin/users', formData),
     updateUserFace: (userId: number, formData: FormData) => apiClient.post(`/admin/user/${userId}/face`, formData),
     deleteUserFace: (userId: number) => apiClient.delete(`/admin/user/${userId}/face`),
     getUserFace: (userId: number) => apiClient.get(`/admin/user/${userId}/face`, { responseType: 'blob' }),

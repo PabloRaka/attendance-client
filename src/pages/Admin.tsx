@@ -308,7 +308,7 @@ const Admin = () => {
       fd.append('password', newUser.password);
       fd.append('role', newUser.role);
       
-      await api.auth.register(fd);
+      await api.admin.createUser(fd);
       setMsg('✅ User berhasil dibuat!');
       setIsNewUserOpen(false);
       setNewUser({ fullname: '', username: '', password: '', role: 'user' });

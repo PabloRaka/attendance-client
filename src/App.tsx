@@ -72,7 +72,6 @@ const AppContent = () => {
     <Routes>
       {/* Auth Routes (Full-screen) */}
       <Route path="/login" element={<Login />} />
-      {/* <Route path="/register" element={<Register />} /> */}
       
       {/* App Routes (With Navbar and Container) */}
       <Route path="/" element={
