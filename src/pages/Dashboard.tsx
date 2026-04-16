@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import { Scan, AlertCircle, UserCheck } from 'lucide-react';

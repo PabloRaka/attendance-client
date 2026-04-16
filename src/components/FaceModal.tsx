@@ -66,12 +66,10 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<{ success: boolean; message: string; detail?: string } | null>(null);
   const [cameraError, setCameraError] = useState('');
-  const [locationNotice, setLocationNotice] = useState('');
 
   // Real-time quality states
   const [quality, setQuality] = useState<{ ok: boolean; message: string }>({ ok: true, message: '' });
   const [bypass, setBypass] = useState(false);
-  const [attempts, setAttempts] = useState(0);
   const [detector, setDetector] = useState<any>(null);
 
   useEffect(() => {
@@ -166,7 +164,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
 
   const handleSelectCamera = async () => {
     setCameraError('');
-    setLocationNotice('');
     setPhase('camera');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -184,11 +181,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
 
   const handleCapture = () => {
     if (!quality.ok && !bypass) {
-      setAttempts(prev => {
-        const next = prev + 1;
-        if (next >= 3) setBypass(true);
-        return next;
-      });
+      setBypass(true);
       return;
     }
 
@@ -213,10 +206,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     setPreviewUrl(null);
     setResult(null);
     setCameraError('');
-    setLocationNotice('');
-    setPhase('camera');
-    setQuality({ ok: true, message: '' });
-    setAttempts(0);
     setBypass(false);
     handleSelectCamera();
   };
@@ -241,7 +230,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const handleSubmit = async () => {
     if (!capturedBlob) return;
     setPhase('processing');
-    setLocationNotice('');
 
     let compressed: Blob;
     let location: LocationCoords;
@@ -253,7 +241,6 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
       ]);
     } catch (err: any) {
       const message = typeof err === 'string' ? err : err?.message || 'Gagal mengambil lokasi.';
-      setLocationNotice(message);
       setResult({
         success: false,
         message: 'Lokasi wajib diaktifkan',
