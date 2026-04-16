@@ -10,6 +10,11 @@ interface AttendanceLog {
   attendance_type: 'in' | 'out';
 }
 
+interface LocationCoords {
+  lat: number;
+  lng: number;
+}
+
 // Compress image to max 640px, quality 80% to reduce upload size over slow connections
 const compressImage = (blob: Blob, maxPx = 640, quality = 0.80): Promise<Blob> =>
   new Promise((resolve) => {
@@ -42,6 +47,31 @@ const checkBrightness = (video: HTMLVideoElement): number => {
     brightness += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
   }
   return brightness / (canvas.width * canvas.height);
+};
+
+const getLocationErrorMessage = (error?: GeolocationPositionError | null): string => {
+  if (!window.isSecureContext) {
+    return 'Akses lokasi hanya bisa digunakan dari koneksi aman (HTTPS). Buka aplikasi dari link HTTPS lalu coba lagi.';
+  }
+
+  if (!navigator.geolocation) {
+    return 'Browser ini tidak mendukung akses lokasi. Gunakan browser lain yang mendukung geolocation.';
+  }
+
+  if (!error) {
+    return 'Gagal mengambil lokasi. Pastikan GPS aktif dan izin lokasi sudah diberikan.';
+  }
+
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      return 'Izin lokasi ditolak. Buka pengaturan browser, izinkan lokasi untuk situs ini, lalu coba lagi.';
+    case error.POSITION_UNAVAILABLE:
+      return 'Lokasi tidak bisa dideteksi. Pastikan GPS/perangkat lokasi aktif lalu coba lagi.';
+    case error.TIMEOUT:
+      return 'Pengambilan lokasi terlalu lama. Pastikan sinyal lokasi stabil lalu coba lagi.';
+    default:
+      return 'Gagal mengambil lokasi. Pastikan GPS aktif dan izin lokasi sudah diberikan.';
+  }
 };
 
 // ─── Face Recognition Modal ──────────────────────────────────────────────────
@@ -167,6 +197,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<{ success: boolean; message: string; detail?: string } | null>(null);
   const [cameraError, setCameraError] = useState('');
+  const [locationNotice, setLocationNotice] = useState('');
 
   // Real-time quality states
   const [quality, setQuality] = useState<{ ok: boolean; message: string }>({ ok: true, message: '' });
@@ -252,6 +283,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
 
   const handleSelectCamera = async () => {
     setCameraError('');
+    setLocationNotice('');
     setPhase('camera');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -299,6 +331,7 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     setPreviewUrl(null);
     setResult(null);
     setCameraError('');
+    setLocationNotice('');
     setPhase('camera');
     setQuality({ ok: true, message: '' });
     setAttempts(0);
@@ -306,31 +339,54 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
     handleSelectCamera();
   };
 
-  const getLocation = (): Promise<{ lat: number; lng: number } | null> =>
-    new Promise((resolve) => {
-      if (!navigator.geolocation) return resolve(null);
+  const getLocation = (): Promise<LocationCoords> =>
+    new Promise((resolve, reject) => {
+      if (!window.isSecureContext) {
+        reject(new Error(getLocationErrorMessage()));
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        reject(new Error(getLocationErrorMessage()));
+        return;
+      }
+
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve(null),
-        { timeout: 10000 }
+        (error) => reject(new Error(getLocationErrorMessage(error))),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     });
 
   const handleSubmit = async () => {
     if (!capturedBlob) return;
     setPhase('processing');
+    setLocationNotice('');
 
-    const [compressed, location] = await Promise.all([
-      compressImage(capturedBlob),
-      getLocation()
-    ]);
+    let compressed: Blob;
+    let location: LocationCoords;
+
+    try {
+      [compressed, location] = await Promise.all([
+        compressImage(capturedBlob),
+        getLocation()
+      ]);
+    } catch (err: any) {
+      const message = typeof err === 'string' ? err : err?.message || 'Gagal mengambil lokasi.';
+      setLocationNotice(message);
+      setResult({
+        success: false,
+        message: 'Lokasi wajib diaktifkan',
+        detail: message,
+      });
+      setPhase('result');
+      return;
+    }
 
     const formData = new FormData();
     formData.append('file', compressed, 'face.jpg');
-    if (location) {
-      formData.append('latitude', location.lat.toString());
-      formData.append('longitude', location.lng.toString());
-    }
+    formData.append('latitude', location.lat.toString());
+    formData.append('longitude', location.lng.toString());
 
     try {
       const res: any = await api.attendance.scanFace(formData);
@@ -386,6 +442,14 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
                     </p>
                   </div>
                 )}
+                {phase === 'preview' && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 mt-4 flex items-start gap-3 shadow-sm animate-in slide-in-from-top-2 duration-500">
+                    <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-blue-700 text-[12px] font-bold leading-relaxed">
+                      Lokasi wajib aktif untuk presensi. Saat verifikasi, browser akan meminta izin lokasi jika belum pernah diberikan.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -398,6 +462,12 @@ const FaceModal: React.FC<FaceModalProps> = ({ onClose }) => {
               {cameraError && phase === 'camera' && (
                 <div className="bg-red-50 border border-red-100 text-red-500 rounded-2xl p-4 text-xs font-bold mb-4">
                   {cameraError}
+                </div>
+              )}
+
+              {locationNotice && phase === 'preview' && (
+                <div className="bg-amber-50 border border-amber-100 text-amber-700 rounded-2xl p-4 text-xs font-bold mb-4">
+                  {locationNotice}
                 </div>
               )}
 

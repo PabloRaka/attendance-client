@@ -87,5 +87,6 @@ export const api = {
       params: { start_date: start, end_date: end, search: search },
       responseType: 'blob'
     }),
+    testWorker: (message?: string) => apiClient.post('/admin/test-worker', null, { params: { message } }),
   },
 };

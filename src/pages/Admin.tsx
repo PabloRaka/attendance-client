@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { 
   Users, Search, Plus, Edit2, Trash2, Camera, 
   X, CheckCircle, AlertCircle, ImageIcon,
-  Shield
+  Shield, Activity
 } from 'lucide-react';
 import Pagination, { PageSizeSelector } from '../components/Pagination';
 
@@ -327,6 +327,19 @@ const Admin = () => {
     setCurrentPage(1); // Reset to first page on search
   };
 
+  const handleTestWorker = async () => {
+    setIsLoading(true);
+    setMsg('⏳ Mengirim tugas uji coba ke worker...');
+    try {
+      const res: any = await api.admin.testWorker("Uji coba koneksi dari Dashboard Admin");
+      setMsg(`✅ Task dikirim! ID: ${res.task_id}. Periksa log worker untuk verifikasi.`);
+    } catch (e: any) {
+      setMsg(`❌ Gagal terhubung ke worker: ${e}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-6 duration-700">
       
@@ -342,12 +355,23 @@ const Admin = () => {
           </div>
         </div>
         
-        <button 
-          onClick={() => setIsNewUserOpen(true)}
-          className="w-full md:w-auto bg-[#817BB9] hover:bg-[#6e68a3] text-white font-black px-8 py-4 rounded-[20px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#817BB9]/20 uppercase tracking-widest text-[11px]"
-        >
-          <Plus className="w-5 h-5" /> Tambah User Baru
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          <button 
+            onClick={handleTestWorker}
+            disabled={isLoading}
+            className="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-600 font-black px-8 py-4 rounded-[20px] transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[11px]"
+            title="Verifikasi apakah background worker berjalan"
+          >
+            <Activity className={`w-5 h-5 ${isLoading ? 'animate-pulse' : ''}`} /> Test Worker
+          </button>
+          
+          <button 
+            onClick={() => setIsNewUserOpen(true)}
+            className="w-full sm:w-auto bg-[#817BB9] hover:bg-[#6e68a3] text-white font-black px-8 py-4 rounded-[20px] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#817BB9]/20 uppercase tracking-widest text-[11px]"
+          >
+            <Plus className="w-5 h-5" /> Tambah User Baru
+          </button>
+        </div>
       </div>
 
       {msg && (
