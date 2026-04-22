@@ -98,8 +98,13 @@ const History = () => {
   const [history, setHistory] = useState<AttendanceLog[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const getTodayDate = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const [startDate, setStartDate] = useState(getTodayDate());
+  const [endDate, setEndDate] = useState(getTodayDate());
   const [msg, setMsg] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   
   // Pagination State
@@ -191,8 +196,9 @@ const History = () => {
   };
 
   const clearFilters = () => {
-    setStartDate('');
-    setEndDate('');
+    const today = getTodayDate();
+    setStartDate(today);
+    setEndDate(today);
     setSearch('');
   };
 
@@ -307,7 +313,7 @@ const History = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                {(startDate || endDate || search) && (
+                {(startDate !== getTodayDate() || endDate !== getTodayDate() || search) && (
                   <button
                     onClick={clearFilters}
                     className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl transition-colors text-[10px] font-black uppercase tracking-widest"
